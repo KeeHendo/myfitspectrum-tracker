@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>MyFitSpectrum Group Progress Tracker</title>
+<style>
+  :root { --bw: #222; --muted:#555; --alt:#f6f6f6; }
+  *{box-sizing:border-box}
+  body{margin:0;padding:16px;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial}
+  h1{margin:0 0 6px;font-size:20px}
+  h2{margin:16px 0 8px;font-size:16px}
+  .appbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+  .spacer{flex:1}
+  button,select,input[type="date"],input[type="text"]{border:1px solid var(--bw);background:#fff;padding:8px 10px;border-radius:8px;font-size:14px;cursor:pointer}
+  button{font-weight:600}
+  button.primary{background:#000;color:#fff}
+  button.ghost{background:#fff}
+  button:disabled{opacity:.5;cursor:not-allowed}
+  .grid{display:grid;grid-template-columns:320px 1fr;gap:12px}
+  .card{border:1px solid var(--bw);border-radius:12px;padding:12px;background:#fff}
+  .row{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+  .row label{font-size:13px;color:#000;min-width:90px}
+  .muted{color:var(--muted);font-size:12px}
+  .legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12px}
+  .legend span{border:1px solid var(--bw);border-radius:999px;padding:2px 8px;background:#fff;cursor:pointer;transition:background-color 0.2s}
+  .legend span:hover{background:#f0f0f0}
+  table{width:100%;border-collapse:collapse}
+  th,td{border:1px solid var(--bw);padding:6px 8px;text-align:left;vertical-align:top;font-size:13px}
+  thead th{background:#eaeaea;position:sticky;top:0;z-index:1}
+  tbody tr:nth-child(odd){background:var(--alt)}
+  .small{font-size:12px}
+  .name-input,.notes{width:100%;border:none;outline:none;background:transparent;font-size:13px}
+  .notes{min-height:30px;resize:vertical}
+  .select{width:100%;background:#fff}
+  .sticky-actions{position:sticky;bottom:0;background:#fff;padding-top:10px;border-top:1px dashed var(--bw);margin-top:10px;display:flex;gap:8px;flex-wrap:wrap}
+  .tabs{display:flex;gap:8px;margin-bottom:8px}
+  .tab{border:1px solid var(--bw);border-radius:999px;padding:6px 10px;background:#fff;cursor:pointer;font-weight:600}
+  .tab.active{background:#000;color:#fff}
+  .totals{margin-top:8px;font-size:13px}
+  .section{margin-top:12px}
+  @media(max-width:980px){.grid{grid-template-columns:1fr}}
+  @media print{.appbar,.sticky-actions,.tabs{display:none!important} body{padding:0} .card{border:none;padding:0} thead th{position:static}}
+  /* Report styles */
+  .report{border:1px solid var(--bw);border-radius:12px;padding:12px;background:#fff}
+  .hr{border-top:1px dashed var(--bw);margin:10px 0}
+</style>
+</head>
+<body>
+
+<div class="appbar">
+  <div style="display: flex; align-items: center; gap: 12px;">
+    <img src="logo.png" alt="MyFitSpectrum Logo" style="width: 48px; height: 48px; border-radius: 12px;">
+    <h1>MyFitSpectrum Group Progress Tracker</h1>
+  </div>
+  <div class="spacer"></div>
+  <button class="ghost" onclick="print()">Print</button>
+  <button class="ghost" onclick="exportCSV()">Export CSV</button>
+  <button class="ghost" onclick="exportJSON()">Export JSON</button>
+  <label class="small" for="importJson" style="cursor:pointer;border:1px solid #222;padding:6px 10px;border-radius:8px;">Import JSON</label>
+  <input id="importJson" type="file" accept="application/json" style="display:none" />
+</div>
+
+<div class="tabs">
+  <button class="tab active" id="tabTrack" onclick="switchTab('track')">Track Session</button>
+  <button class="tab" id="tabReport" onclick="switchTab('report')">Monthly Reports</button>
+  <button class="tab" id="tabSessions" onclick="switchTab('sessions')">Saved Sessions</button>
+</div>
+
+<div id="viewTrack">
+  <div class="grid">
+    <!-- Left controls -->
+    <div class="card">
+      <h2>Session Details</h2>
+      <div class="row"><label>Group Name</label><input id="groupName" class="grow" type="text" placeholder="e.g., Group 1 — Tue AM" /></div>
+      <div class="row"><label>Date</label><input id="sessionDate" type="date" /></div>
+      <div class="row"><label>Coach</label><input id="coachName" class="grow" type="text" placeholder="Your name" /></div>
+
+      <h2 class="section">Quick Setup</h2>
+      <div class="row"><button class="ghost" onclick="resetNames()">Reset Names</button><button class="ghost" onclick="seedNames()">Auto-fill Names</button></div>
+      <div class="row"><button class="ghost" onclick="fillBaseline(3)">Set All Baselines = 3</button><button class="ghost" onclick="clearScores()">Clear Scores</button></div>
+
+      <h2 class="section">Quick Note Templates</h2>
+      <div class="legend">
+        <span onclick="addTemplateNote('Excellent effort and motivation')">Excellent Effort</span>
+        <span onclick="addTemplateNote('Needed several breaks during session')">Needed Breaks</span>
+        <span onclick="addTemplateNote('Required frequent verbal prompts')">Needed Prompts</span>
+        <span onclick="addTemplateNote('Great social interaction with peers')">Good Social Skills</span>
+        <span onclick="addTemplateNote('Showed improvement from baseline')">Showed Improvement</span>
+        <span onclick="addTemplateNote('Maintained focus throughout session')">Good Focus</span>
+        <span onclick="addTemplateNote('Struggled with coordination tasks')">Coordination Challenges</span>
+        <span onclick="addTemplateNote('Self-regulated behavior well')">Good Self-Regulation</span>
+      </div>
+      <p class="muted small">Click any template to add to the currently focused notes field</p>
+      
+      <h2 class="section">Rating Scale Guide</h2>
+      <p class="muted"><b>Domains:</b> Strength & Coordination, Focus & Engagement, Social Participation, Self-Regulation</p>
+      <div class="muted small" style="line-height: 1.4;">
+        <b>1 - Maximum Support:</b> Requires full physical/verbal assistance and prompting<br>
+        <b>2 - Moderate Support:</b> Needs frequent assistance and regular prompting<br>
+        <b>3 - Some Support:</b> Occasional assistance needed, responds well to prompts<br>
+        <b>4 - Minimal Support:</b> Mostly independent, minimal prompting required<br>
+        <b>5 - Independent:</b> Fully independent, no assistance or prompting needed
+      </div>
+    </div>
+
+    <!-- Right table -->
+    <div class="card">
+      <h2>Participants (up to 15)</h2>
+      <div style="overflow:auto; max-height: 65vh; border:1px solid var(--bw); border-radius: 8px;">
+        <table id="trackerTable">
+          <thead>
+            <tr>
+              <th>#</th><th>Participant</th><th>Baseline</th><th>Current</th>
+              <th>Strength & Coord.</th><th>Focus & Eng.</th><th>Social Part.</th><th>Self-Reg.</th><th>Notes / Icons</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+      <div class="totals" id="averages">Group Averages — Strength: – | Focus: – | Social: – | Regulation: – | Overall: –</div>
+      <div class="sticky-actions">
+        <button class="primary" onclick="saveSession()">Save Session</button>
+        <button class="ghost" onclick="newSession()">New Session</button>
+        <div class="spacer"></div>
+        <span class="muted small">Tip: Tab/Shift+Tab moves across fields quickly.</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Monthly Reports -->
+<div id="viewReport" style="display:none">
+  <div class="card">
+    <h2>Monthly Tracking Report</h2>
+    <div class="row">
+      <label>Month</label>
+      <input type="month" id="reportMonth" />
+      <label>Participant</label>
+      <select id="reportParticipant"></select>
+      <button class="primary" onclick="buildMonthlyReport()">Generate Report</button>
+      <button class="ghost" onclick="window.print()">Print</button>
+    </div>
+    <div id="reportOutput" class="report" style="margin-top:10px;display:none"></div>
+  </div>
+</div>
+
+<!-- Saved Sessions -->
+<div id="viewSessions" style="display:none">
+  <div class="card">
+    <h2>Saved Sessions</h2>
+    <div class="row">
+      <button class="ghost" onclick="refreshSavedList()">Refresh</button>
+      <button class="ghost" onclick="clearAllSessions()">Delete All Sessions</button>
+    </div>
+    <div id="sessionsList" class="small"></div>
+  </div>
+</div>
+
+<script>
+  // ------------------ Data Model & Storage ------------------
+  const DEFAULT_ROWS = 15;
+  const STORAGE_STATE = "mfs_tracker_state_v3";
+  const STORAGE_SESSIONS = "mfs_tracker_sessions_v3";
+  const DOMAINS = ["strength","focus","social","regulation"];
+
+  let uiState = { groupName:"", sessionDate:"", coachName:"", participants:[] };
+  let sessions = []; // array of session objects
+
+  function emptyRow(i){ return {name:`Participant ${i}`, baseline:"", current:"", strength:"", focus:"", social:"", regulation:"", notes:""};}
+  function initUiState(){
+    uiState.groupName="";
+    uiState.sessionDate=new Date().toISOString().slice(0,10);
+    uiState.coachName="";
+    uiState.participants=Array.from({length:DEFAULT_ROWS},(_,i)=>emptyRow(i+1));
+  }
+
+  function loadAll(){
+    const st = localStorage.getItem(STORAGE_STATE);
+    if(st){ try{ uiState=JSON.parse(st)||initUiState(); }catch{ initUiState(); } } else initUiState();
+    const ss = localStorage.getItem(STORAGE_SESSIONS);
+    if(ss){ try{ sessions=JSON.parse(ss)||[]; }catch{ sessions=[]; } } else sessions=[];
+  }
+  function saveAll(){
+    localStorage.setItem(STORAGE_STATE, JSON.stringify(uiState));
+    localStorage.setItem(STORAGE_SESSIONS, JSON.stringify(sessions));
+  }
+
+  // ------------------ Tracking View ------------------
+  function renderTrack(){
+    document.getElementById("groupName").value=uiState.groupName||"";
+    document.getElementById("sessionDate").value=uiState.sessionDate||"";
+    document.getElementById("coachName").value=uiState.coachName||"";
+
+    const tbody=document.getElementById("tbody");
+    tbody.innerHTML="";
+    uiState.participants.forEach((p,idx)=>{
+      const tr=document.createElement("tr");
+      tr.appendChild(cellText(idx+1));
+      // name
+      const tdName=document.createElement("td");
+      const nameInput=document.createElement("input");
+      nameInput.className="name-input";
+      nameInput.value=p.name||`Participant ${idx+1}`;
+      nameInput.oninput=e=>{ p.name=e.target.value; };
+      tdName.appendChild(nameInput); tr.appendChild(tdName);
+      // selects
+      ["baseline","current","strength","focus","social","regulation"].forEach(field=>{
+        const td=document.createElement("td");
+        td.appendChild(makeSelect(p,field)); tr.appendChild(td);
+      });
+      // notes
+      const tdNotes=document.createElement("td");
+      const ta=document.createElement("textarea"); ta.className="notes"; ta.placeholder="Click templates above or type custom notes..."; ta.value=p.notes||"";
+      ta.oninput=e=>{ p.notes=e.target.value; };
+      ta.onfocus=e=>{ window.currentNotesField = e.target; }; // Track which field is focused
+      tdNotes.appendChild(ta); tr.appendChild(tdNotes);
+      tbody.appendChild(tr);
+    });
+    updateAverages();
+  }
+  function cellText(t){ const td=document.createElement("td"); td.textContent=String(t); return td; }
+  function makeSelect(row,field){
+    const sel=document.createElement("select"); sel.className="select";
+    const optE=document.createElement("option"); optE.value=""; optE.textContent="—"; sel.appendChild(optE);
+    for(let i=1;i<=5;i++){ const o=document.createElement("option"); o.value=String(i); o.textContent=i; sel.appendChild(o); }
+    sel.value=row[field]===""?"":String(row[field]);
+    sel.onchange=e=>{ row[field]=clamp(e.target.value); updateAverages(); };
+    return sel;
+  }
+  function clamp(v){ if(v==="")return""; let n=Number(v); if(!Number.isFinite(n))return""; return Math.max(1,Math.min(5,Math.round(n))); }
+  function updateAverages(){
+    const r=uiState.participants;
+    const avg=f=>{ const vals=r.map(x=>Number(x[f])).filter(Number.isFinite); if(!vals.length)return "–"; return (vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(2); };
+    const aS=avg("strength"), aF=avg("focus"), aSo=avg("social"), aR=avg("regulation");
+    const all=[aS,aF,aSo,aR].filter(v=>v!=="–").map(Number);
+    const overall=all.length?(all.reduce((a,b)=>a+b,0)/all.length).toFixed(2):"–";
+    document.getElementById("averages").textContent=`Group Averages — Strength: ${aS} | Focus: ${aF} | Social: ${aSo} | Regulation: ${aR} | Overall: ${overall}`;
+  }
+
+  // quick actions
+  function resetNames(){ uiState.participants=Array.from({length:DEFAULT_ROWS},(_,i)=>emptyRow(i+1)); renderTrack(); }
+  function seedNames(){ uiState.participants.forEach((p,i)=>{ if(!p.name||p.name.startsWith("Participant ")) p.name=`Participant ${i+1}`;}); renderTrack(); }
+  function fillBaseline(n=3){ uiState.participants.forEach(p=>p.baseline=clamp(n)); renderTrack(); }
+  function clearScores(){ uiState.participants.forEach(p=>{ ["baseline","current","strength","focus","social","regulation"].forEach(k=>p[k]=""); p.notes="";}); renderTrack(); }
+
+  // Template notes functionality
+  function addTemplateNote(noteText) {
+    const currentField = window.currentNotesField;
+    if (currentField) {
+      const currentValue = currentField.value.trim();
+      const newValue = currentValue ? `${currentValue}; ${noteText}` : noteText;
+      currentField.value = newValue;
+      
+      // Update the data model
+      const participantIndex = Array.from(currentField.closest('tbody').children).indexOf(currentField.closest('tr'));
+      if (participantIndex >= 0 && participantIndex < uiState.participants.length) {
+        uiState.participants[participantIndex].notes = newValue;
+      }
+      
+      currentField.focus(); // Keep focus on the field
+    } else {
+      alert('Please click in a notes field first, then select a template.');
+    }
+  }
+
+  // Save as Session (append to sessions list)
+  function saveSession(){
+    // pull header
+    uiState.groupName=document.getElementById("groupName").value.trim();
+    uiState.sessionDate=document.getElementById("sessionDate").value;
+    uiState.coachName=document.getElementById("coachName").value.trim();
+    // clone clean
+    const snapshot = JSON.parse(JSON.stringify(uiState));
+    snapshot.id = `sess_${Date.now()}`;
+    sessions.push(snapshot);
+    saveAll();
+    alert("Session saved!");
+    refreshSavedList();
+  }
+  function newSession(){ if(!confirm("Start a new blank session?"))return; initUiState(); saveAll(); renderTrack(); }
+
+  // ------------------ Sessions View ------------------
+  function refreshSavedList(){
+    const box=document.getElementById("sessionsList"); box.innerHTML="";
+    if(!sessions.length){ box.textContent="No saved sessions yet."; return; }
+    const tbl=document.createElement("table");
+    const head=['Date','Group','Coach','Participants','Actions'];
+    tbl.innerHTML=`<thead><tr>${head.map(h=>`<th>${h}</th>`).join("")}</tr></thead>`;
+    const tb=document.createElement("tbody");
+    sessions.slice().reverse().forEach(sess=>{
+      const tr=document.createElement("tr");
+      tr.innerHTML=`<td>${sess.sessionDate||''}</td>
+        <td>${escapeHtml(sess.groupName||'')}</td>
+        <td>${escapeHtml(sess.coachName||'')}</td>
+        <td>${(sess.participants||[]).length}</td>
+        <td>
+          <button class="ghost" onclick="loadIntoEditor('${sess.id}')">Load to Editor</button>
+          <button class="ghost" onclick="deleteSession('${sess.id}')">Delete</button>
+        </td>`;
+      tb.appendChild(tr);
+    });
+    tbl.appendChild(tb); box.appendChild(tbl);
+  }
+  function loadIntoEditor(id){
+    const s=sessions.find(x=>x.id===id); if(!s) return;
+    uiState = JSON.parse(JSON.stringify(s));
+    saveAll();
+    switchTab('track');
+    renderTrack();
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+  function deleteSession(id){
+    if(!confirm("Delete this session?"))return;
+    sessions = sessions.filter(x=>x.id!==id); saveAll(); refreshSavedList();
+  }
+  function clearAllSessions(){
+    if(!confirm("Delete ALL saved sessions?"))return;
+    sessions=[]; saveAll(); refreshSavedList();
+  }
+
+  // ------------------ Reports ------------------
+  function switchTab(t){
+    document.getElementById("tabTrack").classList.toggle("active", t==='track');
+    document.getElementById("tabReport").classList.toggle("active", t==='report');
+    document.getElementById("tabSessions").classList.toggle("active", t==='sessions');
+    document.getElementById("viewTrack").style.display = t==='track'?'block':'none';
+    document.getElementById("viewReport").style.display = t==='report'?'block':'none';
+    document.getElementById("viewSessions").style.display = t==='sessions'?'block':'none';
+    if(t==='report') prepReportFilters();
+    if(t==='sessions') refreshSavedList();
+  }
+
+  function prepReportFilters(){
+    // month default = current month
+    const m=document.getElementById("reportMonth");
+    if(!m.value){
+      const d=new Date(); m.value = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    }
+    // participants list from all sessions (unique)
+    const sel=document.getElementById("reportParticipant");
+    const names = new Set();
+    sessions.forEach(s=> (s.participants||[]).forEach(p=>{ if(p.name) names.add(p.name.trim()); }));
+    const arr=[...names].sort((a,b)=>a.localeCompare(b));
+    sel.innerHTML = `<option value="">Select participant…</option>` + arr.map(n=>`<option>${escapeHtml(n)}</option>`).join("");
+  }
+
+  function buildMonthlyReport(){
+    const monthStr=document.getElementById("reportMonth").value;
+    const name=document.getElementById("reportParticipant").value;
+    const out=document.getElementById("reportOutput");
+    if(!monthStr || !name){ out.style.display="block"; out.innerHTML="<i>Please choose a month and participant.</i>"; return; }
+
+    // filter sessions by month
+    const [yyyy,mm]=monthStr.split("-");
+    const filtered = sessions.filter(s=>{
+      if(!s.sessionDate) return false;
+      const [y,m]=s.sessionDate.split("-");
+      return y===yyyy && m===mm;
+    });
+
+    // collect all entries for the chosen participant
+    const entries = [];
+    filtered.forEach(s=>{
+      const row = (s.participants||[]).find(p=> (p.name||"").trim()===name.trim());
+      if(row){
+        entries.push({
+          date: s.sessionDate,
+          group: s.groupName||'',
+          coach: s.coachName||'',
+          baseline: numOrNull(row.baseline),
+          current: numOrNull(row.current),
+          strength: numOrNull(row.strength),
+          focus: numOrNull(row.focus),
+          social: numOrNull(row.social),
+          regulation: numOrNull(row.regulation),
+          notes: row.notes||""
+        });
+      }
+    });
+
+    // layout
+    if(!entries.length){
+      out.style.display="block";
+      out.innerHTML = `<b>Monthly Tracking Report</b><div class="hr"></div>
+        <div>No data for <b>${escapeHtml(name)}</b> in <b>${yyyy}-${mm}</b>.</div>`;
+      return;
+    }
+
+    // compute weekly buckets (ISO week)
+    const weeks = {};
+    entries.forEach(e=>{
+      const w = isoWeek(e.date);
+      if(!weeks[w]) weeks[w]=[];
+      weeks[w].push(e);
+    });
+
+    function avg(arr, key){
+      const nums = arr.map(a=>a[key]).filter(n=>typeof n==='number' && !Number.isNaN(n));
+      if(!nums.length) return "–";
+      return (nums.reduce((a,b)=>a+b,0)/nums.length).toFixed(2);
+    }
+
+    // Build HTML report
+    let html = `
+      <div>
+        <h2 style="margin:0 0 6px 0;">Monthly Tracking Report</h2>
+        <div class="small muted">${yyyy}-${mm} • ${escapeHtml(name)}</div>
+        <div class="hr"></div>
+        <div class="small"><b>Domains:</b> Strength & Coordination, Focus & Engagement, Social Participation, Self-Regulation</div>
+        <div class="small muted" style="margin-top:8px; line-height:1.3;">
+          <b>Rating Scale:</b> 1=Maximum Support | 2=Moderate Support | 3=Some Support | 4=Minimal Support | 5=Independent
+        </div>
+      </div>
+      <div class="section">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th><th>Group</th><th>Coach</th>
+              <th>Strength Avg</th><th>Focus Avg</th><th>Social Avg</th><th>Regulation Avg</th><th>Session Avg</th><th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${entries.sort((a,b)=>a.date.localeCompare(b.date)).map(e=>{
+              const sessionScores = [e.strength, e.focus, e.social, e.regulation].filter(s => typeof s === 'number');
+              const sessionAvg = sessionScores.length > 0 ? (sessionScores.reduce((a,b)=>a+b,0)/sessionScores.length).toFixed(2) : "–";
+              return `
+                <tr>
+                  <td>${e.date}</td><td>${escapeHtml(e.group)}</td><td>${escapeHtml(e.coach)}</td>
+                  <td>${fmt(e.strength)}</td><td>${fmt(e.focus)}</td><td>${fmt(e.social)}</td><td>${fmt(e.regulation)}</td>
+                  <td><b>${sessionAvg}</b></td>
+                  <td>${escapeHtml(e.notes)}</td>
+                </tr>
+              `;
+            }).join("")}
+          </tbody>
+        </table>
+      </div>
+    `;
+
+    // Weekly averages table
+    const weekRows = Object.keys(weeks).sort().map(w=>{
+      const arr=weeks[w];
+      const weekSessionAvgs = arr.map(e => {
+        const sessionScores = [e.strength, e.focus, e.social, e.regulation].filter(s => typeof s === 'number');
+        return sessionScores.length > 0 ? sessionScores.reduce((a,b)=>a+b,0)/sessionScores.length : null;
+      }).filter(a => a !== null);
+      const avgSessionAvg = weekSessionAvgs.length > 0 ? (weekSessionAvgs.reduce((a,b)=>a+b,0)/weekSessionAvgs.length).toFixed(2) : "–";
+      
+      return `<tr>
+        <td>Week ${w}</td>
+        <td>${avg(arr,'strength')}</td>
+        <td>${avg(arr,'focus')}</td>
+        <td>${avg(arr,'social')}</td>
+        <td>${avg(arr,'regulation')}</td>
+        <td><b>${avgSessionAvg}</b></td>
+      </tr>`;
+    }).join("");
+
+    html += `
+      <div class="section">
+        <b>Weekly Averages</b>
+        <table>
+          <thead><tr><th>Week</th><th>Strength</th><th>Focus</th><th>Social</th><th>Regulation</th><th>Session Avg</th></tr></thead>
+          <tbody>${weekRows}</tbody>
+        </table>
+      </div>
+    `;
+
+    // Monthly overall
+    const monthlySessionAvgs = entries.map(e => {
+      const sessionScores = [e.strength, e.focus, e.social, e.regulation].filter(s => typeof s === 'number');
+      return sessionScores.length > 0 ? sessionScores.reduce((a,b)=>a+b,0)/sessionScores.length : null;
+    }).filter(a => a !== null);
+    const avgMonthlySessionAvg = monthlySessionAvgs.length > 0 ? (monthlySessionAvgs.reduce((a,b)=>a+b,0)/monthlySessionAvgs.length).toFixed(2) : "–";
+    
+    html += `
+      <div class="section">
+        <b>Monthly Summary</b>
+        <table>
+          <thead><tr><th>Strength</th><th>Focus</th><th>Social</th><th>Regulation</th><th>Session Avg</th></tr></thead>
+          <tbody><tr>
+            <td>${avg(entries,'strength')}</td>
+            <td>${avg(entries,'focus')}</td>
+            <td>${avg(entries,'social')}</td>
+            <td>${avg(entries,'regulation')}</td>
+            <td><b>${avgMonthlySessionAvg}</b></td>
+          </tr></tbody>
+        </table>
+      </div>
+    `;
+
+    out.style.display="block";
+    out.innerHTML = html;
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+
+  function overallAvg(arr){
+    const dims=['strength','focus','social','regulation'];
+    const vals=[];
+    arr.forEach(e=>{
+      dims.forEach(k=>{ if(typeof e[k]==='number') vals.push(e[k]); });
+    });
+    if(!vals.length) return "–";
+    return (vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(2);
+  }
+
+  function isoWeek(dateStr){
+    // returns ISO week number (1-53)
+    const d=new Date(dateStr+"T12:00:00"); // force midday
+    const target=new Date(d.valueOf());
+    const dayNr=(d.getDay()+6)%7;
+    target.setDate(target.getDate()-dayNr+3);
+    const firstThursday=new Date(target.getFullYear(),0,4);
+    const dayDiff=(target-firstThursday)/(24*3600*1000);
+    return 1 + Math.floor(dayDiff/7);
+  }
+  function numOrNull(v){ const n=Number(v); return Number.isFinite(n)?n:null; }
+  function fmt(v){ return (typeof v==='number' && !Number.isNaN(v)) ? v : "–"; }
+  function escapeHtml(s){ return (s||"").replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+  // ------------------ Import/Export ------------------
+  function exportJSON(){
+    const blob=new Blob([JSON.stringify({uiState,sessions},null,2)],{type:"application/json"});
+    const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
+    a.download=`mfs_backup_${new Date().toISOString().slice(0,10)}.json`; a.click(); URL.revokeObjectURL(a.href);
+  }
+  function exportCSV(){
+    if(!sessions.length){ alert("No sessions saved yet."); return; }
+    const headers=["SessionID","Date","Group","Coach","#","Participant","Baseline","Current","Strength","Focus","Social","Regulation","Notes"];
+    const lines=[headers.join(",")];
+    sessions.forEach(s=>{
+      (s.participants||[]).forEach((p,i)=>{
+        lines.push([
+          s.id, s.sessionDate, csv(p.sGroup||s.groupName||""), csv(s.coachName||""), i+1,
+          csv(p.name||""), p.baseline, p.current, p.strength, p.focus, p.social, p.regulation, csv(p.notes||"")
+        ].join(","));
+      });
+    });
+    const blob=new Blob([lines.join("\n")],{type:"text/csv"});
+    const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
+    a.download=`mfs_sessions_${new Date().toISOString().slice(0,10)}.csv`; a.click(); URL.revokeObjectURL(a.href);
+  }
+  function csv(s){ s=String(s); return /[",\n]/.test(s) ? `"${s.replace(/"/g,'""')}"` : s; }
+
+  document.getElementById("importJson").addEventListener("change",(e)=>{
+    const f=e.target.files?.[0]; if(!f) return;
+    const reader=new FileReader();
+    reader.onload=()=>{
+      try{
+        const obj=JSON.parse(reader.result);
+        if(obj.sessions && Array.isArray(obj.sessions)) sessions=obj.sessions;
+        if(obj.uiState) uiState=obj.uiState;
+        saveAll(); renderTrack(); alert("Imported!");
+      }catch{ alert("Invalid JSON."); }
+    };
+    reader.readAsText(f); e.target.value="";
+  });
+
+  // ------------------ Boot ------------------
+  loadAll();
+  renderTrack();
+  prepReportFilters();
+
+</script>
+</body>
+</html>
