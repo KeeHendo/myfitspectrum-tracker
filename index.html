@@ -42,15 +42,20 @@
   .tab.active{background:#000;color:#fff}
   .totals{margin-top:8px;font-size:13px}
   .section{margin-top:12px}
-  @media(max-width:980px){.grid{grid-template-columns:1fr}}
+  @media(max-width:980px){
+    .grid{grid-template-columns:1fr}
+    /* Stack left panel on top for mobile */
+    .grid > .card:first-child{order:1;margin-bottom:15px}
+    .grid > .card:last-child{order:2}
+  }
   @media(max-width:768px){
     body{padding:8px}
     h1{font-size:18px}
     .appbar{flex-direction:column;gap:6px;align-items:stretch}
     .appbar > div:first-child{justify-content:center}
     .appbar > div:first-child img{width:40px;height:40px}
-    .grid{gap:8px}
-    .card{padding:12px}
+    .grid{gap:15px;display:block}
+    .card{padding:12px;margin-bottom:15px}
     .row{flex-direction:column;align-items:stretch;gap:6px}
     .row label{min-width:auto;font-weight:600;font-size:14px}
     input,select,button{padding:12px;font-size:16px;min-height:48px;border-radius:10px}
@@ -58,53 +63,78 @@
     input[type="text"]:focus, input[type="date"]:focus{border-color:#007bff;background:#fff;outline:none}
     .tabs{flex-wrap:wrap;gap:8px;justify-content:center}
     .tab{font-size:15px;padding:10px 16px;min-height:44px}
-    table{font-size:13px}
-    th,td{padding:8px 6px;min-width:70px}
-    th{font-size:12px;font-weight:600}
-    .name-input,.notes{font-size:15px;padding:8px;background:#f8f9fa;border-radius:6px}
+    
+    /* Mobile table optimizations */
+    .card h2{margin-bottom:10px}
+    .card > div:nth-child(2){max-height:50vh !important;margin-bottom:10px}
+    table{font-size:13px;width:100%}
+    th,td{padding:8px 6px;min-width:70px;white-space:nowrap}
+    th{font-size:12px;font-weight:600;background:#eaeaea !important}
+    .name-input,.notes{font-size:15px;padding:8px;background:#f8f9fa;border-radius:6px;width:100%}
     .name-input:focus,.notes:focus{background:#fff;border:2px solid #007bff}
-    .notes{min-height:70px;resize:vertical}
-    .select{font-size:15px;padding:10px;background:#f8f9fa;border:2px solid #e9ecef;border-radius:8px}
+    .notes{min-height:60px;resize:vertical;white-space:normal}
+    .select{font-size:15px;padding:10px;background:#f8f9fa;border:2px solid #e9ecef;border-radius:8px;width:100%}
     .select:focus{border-color:#007bff;background:#fff}
-    .legend{gap:10px;justify-content:center}
+    
+    /* Template buttons */
+    .legend{gap:8px;justify-content:center;flex-wrap:wrap}
     .legend span{font-size:12px;padding:8px 12px;min-height:40px;display:flex;align-items:center;justify-content:center;text-align:center}
     .legend span:active{background:#e9ecef;transform:scale(0.95)}
-    .sticky-actions{flex-direction:column;gap:10px;padding:15px 0}
+    
+    /* Action buttons */
+    .sticky-actions{flex-direction:column;gap:10px;padding:15px 0;position:static}
     .sticky-actions button{width:100%;min-height:50px;font-size:16px;font-weight:600}
     .button.primary{background:#007bff;box-shadow:0 2px 4px rgba(0,123,255,0.3)}
     .totals{font-size:13px;text-align:center;padding:10px;background:#f8f9fa;border-radius:8px;margin:10px 0}
     .small{font-size:12px}
-    /* Better mobile table */
-    .card > div:first-child{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:10px}
-    th:first-child, td:first-child{position:sticky;left:0;z-index:2;background:#fff;border-right:2px solid #007bff}
-    th:nth-child(2), td:nth-child(2){position:sticky;left:50px;z-index:2;background:#fff;border-right:2px solid #007bff;min-width:130px}
-    tbody tr:nth-child(odd) td:first-child, tbody tr:nth-child(odd) td:nth-child(2){background:#f8f9fa}
+    
+    /* Better mobile table scrolling */
+    .card > div:nth-child(2){overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:10px}
+    th:first-child, td:first-child{position:sticky;left:0;z-index:2;background:#eaeaea;border-right:2px solid #007bff}
+    th:nth-child(2), td:nth-child(2){position:sticky;left:50px;z-index:2;background:#eaeaea;border-right:2px solid #007bff;min-width:130px}
+    tbody tr:nth-child(odd) td:first-child{background:#f8f9fa}
+    tbody tr:nth-child(odd) td:nth-child(2){background:#f8f9fa}
+    tbody tr:nth-child(even) td:first-child{background:#fff}
+    tbody tr:nth-child(even) td:nth-child(2){background:#fff}
   }
   @media(max-width:480px){
     body{padding:6px}
     h1{font-size:16px;line-height:1.2}
     .appbar > div:first-child{gap:8px}
     .appbar > div:first-child img{width:36px;height:36px}
-    .card{padding:10px}
+    .card{padding:10px;margin-bottom:10px}
     .row{gap:4px}
     input,select,button{padding:14px;font-size:16px;min-height:50px}
     .tabs{gap:6px}
     .tab{font-size:14px;padding:12px 14px;min-height:46px}
+    
+    /* Compact table for small screens */
+    .card h2{font-size:16px;margin-bottom:8px}
+    .card > div:nth-child(2){max-height:45vh !important}
     table{font-size:12px}
     th,td{padding:6px 4px;min-width:60px}
+    th{font-size:11px}
     .name-input,.notes{font-size:16px;padding:10px}
-    .notes{min-height:80px}
+    .notes{min-height:60px}
     .select{font-size:16px;padding:12px}
-    .legend{gap:8px;margin:10px 0}
-    .legend span{font-size:11px;padding:6px 10px;min-height:36px;line-height:1.2}
-    .sticky-actions{padding:12px 0}
+    
+    /* Compact template buttons */
+    .legend{gap:6px;margin:8px 0}
+    .legend span{font-size:11px;padding:6px 8px;min-height:36px;line-height:1.2}
+    .sticky-actions{padding:10px 0}
     .sticky-actions button{min-height:52px;font-size:17px}
+    
     /* Enhanced sticky columns for small screens */
-    th:first-child, td:first-child{left:0;min-width:35px;font-size:11px}
-    th:nth-child(2), td:nth-child(2){left:35px;min-width:120px}
-    /* Swipe indicator */
-    .card h2:after{content:" (← Swipe to scroll →)";font-size:11px;color:var(--muted);font-weight:normal}
+    th:first-child, td:first-child{left:0;min-width:35px;font-size:11px;padding:4px 2px}
+    th:nth-child(2), td:nth-child(2){left:35px;min-width:110px;padding:6px 4px}
+    
+    /* Clear swipe indicator */
+    .card h2:after{content:" ← Swipe table to scroll →";font-size:10px;color:var(--muted);font-weight:normal;display:block;margin-top:4px}
     .totals{font-size:12px;padding:8px;margin:8px 0}
+    
+    /* Better section spacing */
+    .section{margin-top:15px}
+    h2.section{font-size:15px}
   }
   @media print{
     .appbar,.sticky-actions,.tabs{display:none!important} 
@@ -173,7 +203,7 @@
 
       <h2 class="section">Quick Setup</h2>
       <div class="row"><button class="ghost" onclick="resetNames()">Reset Names</button><button class="ghost" onclick="seedNames()">Auto-fill Names</button></div>
-      <div class="row"><button class="ghost" onclick="fillBaseline(3)">Set All Baselines = 3</button><button class="ghost" onclick="clearScores()">Clear Scores</button></div>
+      <div class="row"><button class="ghost" onclick="fillBaseline(3)">Set All Baselines = 3</button><button class="ghost" onclick="clearScores()">Clear All Scores</button></div>
 
       <h2 class="section">Quick Note Templates</h2>
       <div class="legend">
@@ -202,14 +232,16 @@
     <!-- Right table -->
     <div class="card">
       <h2>Participants (up to 15)</h2>
-      <div style="overflow:auto; max-height: 65vh; border:1px solid var(--bw); border-radius: 8px; -webkit-overflow-scrolling: touch;">
+      <div style="overflow:auto; max-height: 60vh; border:1px solid var(--bw); border-radius: 8px; -webkit-overflow-scrolling: touch;">
         <table id="trackerTable">
           <thead>
             <tr>
               <th style="position:sticky;left:0;background:#eaeaea;z-index:2;">#</th>
               <th style="position:sticky;left:40px;background:#eaeaea;z-index:2;min-width:120px;">Participant</th>
-              <th>Baseline</th><th>Current</th>
-              <th>Strength & Coord.</th><th>Focus & Eng.</th><th>Social Part.</th><th>Self-Reg.</th>
+              <th>Strength Base</th><th>Strength Current</th>
+              <th>Focus Base</th><th>Focus Current</th>
+              <th>Social Base</th><th>Social Current</th>
+              <th>Regulation Base</th><th>Regulation Current</th>
               <th style="min-width:150px;">Notes</th>
             </tr>
           </thead>
@@ -265,7 +297,7 @@
   let uiState = { groupName:"", sessionDate:"", coachName:"", participants:[] };
   let sessions = []; // array of session objects
 
-  function emptyRow(i){ return {name:`Participant ${i}`, baseline:"", current:"", strength:"", focus:"", social:"", regulation:"", notes:""};}
+  function emptyRow(i){ return {name:`Participant ${i}`, strengthBase:"", strength:"", focusBase:"", focus:"", socialBase:"", social:"", regulationBase:"", regulation:"", notes:""};}
   function initUiState(){
     uiState.groupName="";
     uiState.sessionDate=new Date().toISOString().slice(0,10);
@@ -316,11 +348,12 @@
       nameInput.oninput=e=>{ p.name=e.target.value; };
       tdName.appendChild(nameInput); tr.appendChild(tdName);
       
-      // selects
-      ["baseline","current","strength","focus","social","regulation"].forEach(field=>{
+      // baseline and current selects for each domain
+      ["strengthBase","strength","focusBase","focus","socialBase","social","regulationBase","regulation"].forEach(field=>{
         const td=document.createElement("td");
         td.appendChild(makeSelect(p,field)); tr.appendChild(td);
       });
+      
       // notes
       const tdNotes=document.createElement("td");
       tdNotes.style.minWidth = "150px";
@@ -346,16 +379,20 @@
     const r=uiState.participants;
     const avg=f=>{ const vals=r.map(x=>Number(x[f])).filter(Number.isFinite); if(!vals.length)return "–"; return (vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(2); };
     const aS=avg("strength"), aF=avg("focus"), aSo=avg("social"), aR=avg("regulation");
+    const aSB=avg("strengthBase"), aFB=avg("focusBase"), aSoB=avg("socialBase"), aRB=avg("regulationBase");
     const all=[aS,aF,aSo,aR].filter(v=>v!=="–").map(Number);
+    const allBase=[aSB,aFB,aSoB,aRB].filter(v=>v!=="–").map(Number);
     const overall=all.length?(all.reduce((a,b)=>a+b,0)/all.length).toFixed(2):"–";
-    document.getElementById("averages").textContent=`Group Averages — Strength: ${aS} | Focus: ${aF} | Social: ${aSo} | Regulation: ${aR} | Overall: ${overall}`;
+    const overallBase=allBase.length?(allBase.reduce((a,b)=>a+b,0)/allBase.length).toFixed(2):"–";
+    document.getElementById("averages").innerHTML=`<div>Current Averages — Strength: ${aS} | Focus: ${aF} | Social: ${aSo} | Regulation: ${aR} | Overall: ${overall}</div>
+    <div style="margin-top:4px;color:var(--muted)">Baseline Averages — Strength: ${aSB} | Focus: ${aFB} | Social: ${aSoB} | Regulation: ${aRB} | Overall: ${overallBase}</div>`;
   }
 
   // quick actions
   function resetNames(){ uiState.participants=Array.from({length:DEFAULT_ROWS},(_,i)=>emptyRow(i+1)); renderTrack(); }
   function seedNames(){ uiState.participants.forEach((p,i)=>{ if(!p.name||p.name.startsWith("Participant ")) p.name=`Participant ${i+1}`;}); renderTrack(); }
-  function fillBaseline(n=3){ uiState.participants.forEach(p=>p.baseline=clamp(n)); renderTrack(); }
-  function clearScores(){ uiState.participants.forEach(p=>{ ["baseline","current","strength","focus","social","regulation"].forEach(k=>p[k]=""); p.notes="";}); renderTrack(); }
+  function fillBaseline(n=3){ uiState.participants.forEach(p=>{p.strengthBase=clamp(n); p.focusBase=clamp(n); p.socialBase=clamp(n); p.regulationBase=clamp(n);}); renderTrack(); }
+  function clearScores(){ uiState.participants.forEach(p=>{ ["strengthBase","strength","focusBase","focus","socialBase","social","regulationBase","regulation"].forEach(k=>p[k]=""); p.notes="";}); renderTrack(); }
 
   // Template notes functionality
   function addTemplateNote(noteText) {
@@ -531,11 +568,13 @@
           date: s.sessionDate,
           group: s.groupName||'',
           coach: s.coachName||'',
-          baseline: numOrNull(row.baseline),
-          current: numOrNull(row.current),
+          strengthBase: numOrNull(row.strengthBase),
           strength: numOrNull(row.strength),
+          focusBase: numOrNull(row.focusBase),
           focus: numOrNull(row.focus),
+          socialBase: numOrNull(row.socialBase),
           social: numOrNull(row.social),
+          regulationBase: numOrNull(row.regulationBase),
           regulation: numOrNull(row.regulation),
           notes: row.notes||""
         });
@@ -578,17 +617,20 @@
     `;
 
     // Add progress chart
-    const baselineAvg = avg(entries, 'baseline');
+    const strengthBaseAvg = avg(entries, 'strengthBase');
+    const focusBaseAvg = avg(entries, 'focusBase');
+    const socialBaseAvg = avg(entries, 'socialBase');
+    const regulationBaseAvg = avg(entries, 'regulationBase');
     const strengthAvg = avg(entries, 'strength');
     const focusAvg = avg(entries, 'focus');
     const socialAvg = avg(entries, 'social');
     const regulationAvg = avg(entries, 'regulation');
     
     const domains = [
-      {name: 'Strength &<br>Coordination', baseline: baselineAvg, average: strengthAvg},
-      {name: 'Focus &<br>Engagement', baseline: baselineAvg, average: focusAvg},
-      {name: 'Social<br>Participation', baseline: baselineAvg, average: socialAvg},
-      {name: 'Self-<br>Regulation', baseline: baselineAvg, average: regulationAvg}
+      {name: 'Strength &<br>Coordination', baseline: strengthBaseAvg, average: strengthAvg},
+      {name: 'Focus &<br>Engagement', baseline: focusBaseAvg, average: focusAvg},
+      {name: 'Social<br>Participation', baseline: socialBaseAvg, average: socialAvg},
+      {name: 'Self-<br>Regulation', baseline: regulationBaseAvg, average: regulationAvg}
     ];
 
     html += `
@@ -750,13 +792,13 @@
   }
   function exportCSV(){
     if(!sessions.length){ alert("No sessions saved yet."); return; }
-    const headers=["SessionID","Date","Group","Coach","#","Participant","Baseline","Current","Strength","Focus","Social","Regulation","Notes"];
+    const headers=["SessionID","Date","Group","Coach","#","Participant","StrengthBase","Strength","FocusBase","Focus","SocialBase","Social","RegulationBase","Regulation","Notes"];
     const lines=[headers.join(",")];
     sessions.forEach(s=>{
       (s.participants||[]).forEach((p,i)=>{
         lines.push([
           s.id, s.sessionDate, csv(p.sGroup||s.groupName||""), csv(s.coachName||""), i+1,
-          csv(p.name||""), p.baseline, p.current, p.strength, p.focus, p.social, p.regulation, csv(p.notes||"")
+          csv(p.name||""), p.strengthBase||"", p.strength||"", p.focusBase||"", p.focus||"", p.socialBase||"", p.social||"", p.regulationBase||"", p.regulation||"", csv(p.notes||"")
         ].join(","));
       });
     });
