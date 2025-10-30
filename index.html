@@ -2,7 +2,10 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="MyFitSpectrum">
 <title>MyFitSpectrum Group Progress Tracker</title>
 <style>
   :root { --bw: #222; --muted:#555; --alt:#f6f6f6; }
@@ -40,6 +43,40 @@
   .totals{margin-top:8px;font-size:13px}
   .section{margin-top:12px}
   @media(max-width:980px){.grid{grid-template-columns:1fr}}
+  @media(max-width:768px){
+    body{padding:8px}
+    h1{font-size:18px}
+    .appbar{flex-direction:column;gap:6px;align-items:stretch}
+    .appbar > div:first-child{justify-content:center}
+    .appbar > div:first-child img{width:40px;height:40px}
+    .grid{gap:8px}
+    .card{padding:8px}
+    .row{flex-direction:column;align-items:stretch;gap:4px}
+    .row label{min-width:auto;font-weight:600}
+    input,select,button{padding:10px;font-size:16px;min-height:44px}
+    .tabs{flex-wrap:wrap;gap:6px}
+    .tab{font-size:14px;padding:8px 12px}
+    table{font-size:12px}
+    th,td{padding:4px 6px}
+    .name-input,.notes{font-size:14px;padding:6px}
+    .notes{min-height:60px}
+    .legend{gap:8px}
+    .legend span{font-size:11px;padding:4px 8px}
+    .sticky-actions{flex-direction:column;gap:8px}
+    .sticky-actions button{width:100%}
+    .totals{font-size:12px;text-align:center}
+    .small{font-size:11px}
+  }
+  @media(max-width:480px){
+    h1{font-size:16px}
+    .appbar > div:first-child{gap:8px}
+    .appbar > div:first-child img{width:36px;height:36px}
+    table{display:block;overflow-x:auto;white-space:nowrap}
+    .card > div:first-child{overflow-x:auto}
+    th,td{min-width:80px}
+    .legend{justify-content:center}
+    .row{gap:2px}
+  }
   @media print{.appbar,.sticky-actions,.tabs{display:none!important} body{padding:0} .card{border:none;padding:0} thead th{position:static}}
   /* Report styles */
   .report{border:1px solid var(--bw);border-radius:12px;padding:12px;background:#fff}
@@ -107,12 +144,15 @@
     <!-- Right table -->
     <div class="card">
       <h2>Participants (up to 15)</h2>
-      <div style="overflow:auto; max-height: 65vh; border:1px solid var(--bw); border-radius: 8px;">
+      <div style="overflow:auto; max-height: 65vh; border:1px solid var(--bw); border-radius: 8px; -webkit-overflow-scrolling: touch;">
         <table id="trackerTable">
           <thead>
             <tr>
-              <th>#</th><th>Participant</th><th>Baseline</th><th>Current</th>
-              <th>Strength & Coord.</th><th>Focus & Eng.</th><th>Social Part.</th><th>Self-Reg.</th><th>Notes / Icons</th>
+              <th style="position:sticky;left:0;background:#eaeaea;z-index:2;">#</th>
+              <th style="position:sticky;left:40px;background:#eaeaea;z-index:2;min-width:120px;">Participant</th>
+              <th>Baseline</th><th>Current</th>
+              <th>Strength & Coord.</th><th>Focus & Eng.</th><th>Social Part.</th><th>Self-Reg.</th>
+              <th style="min-width:150px;">Notes</th>
             </tr>
           </thead>
           <tbody id="tbody"></tbody>
@@ -196,14 +236,28 @@
     tbody.innerHTML="";
     uiState.participants.forEach((p,idx)=>{
       const tr=document.createElement("tr");
-      tr.appendChild(cellText(idx+1));
-      // name
+      
+      // Row number - sticky on mobile
+      const tdNum = cellText(idx+1);
+      tdNum.style.position = "sticky";
+      tdNum.style.left = "0";
+      tdNum.style.background = idx % 2 === 0 ? "var(--alt)" : "#fff";
+      tdNum.style.zIndex = "1";
+      tr.appendChild(tdNum);
+      
+      // name - sticky on mobile
       const tdName=document.createElement("td");
+      tdName.style.position = "sticky";
+      tdName.style.left = "40px";
+      tdName.style.background = idx % 2 === 0 ? "var(--alt)" : "#fff";
+      tdName.style.zIndex = "1";
+      tdName.style.minWidth = "120px";
       const nameInput=document.createElement("input");
       nameInput.className="name-input";
       nameInput.value=p.name||`Participant ${idx+1}`;
       nameInput.oninput=e=>{ p.name=e.target.value; };
       tdName.appendChild(nameInput); tr.appendChild(tdName);
+      
       // selects
       ["baseline","current","strength","focus","social","regulation"].forEach(field=>{
         const td=document.createElement("td");
@@ -211,6 +265,7 @@
       });
       // notes
       const tdNotes=document.createElement("td");
+      tdNotes.style.minWidth = "150px";
       const ta=document.createElement("textarea"); ta.className="notes"; ta.placeholder="Click templates above or type custom notes..."; ta.value=p.notes||"";
       ta.oninput=e=>{ p.notes=e.target.value; };
       ta.onfocus=e=>{ window.currentNotesField = e.target; }; // Track which field is focused
